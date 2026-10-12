@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>풍선 터뜨리기 게임</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* 상단 HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hud-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* 제한 시간 바 */
+        #timer-bar-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        #timer-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ffa502, #2ed573);
+            border-radius: 7px;
+            transition: width 0.1s linear;
+        }
+
+        #timer-icon {
+            position: absolute;
+            left: 5px;
+            font-size: 10px;
+            z-index: 2;
+        }
+
+        /* 왼쪽 아래 현재 점수 */
+        #score-display {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 100;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 보너스 타임 / 공지 메시지 */
+        #notice-banner {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 90;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        #notice-banner.show {
+            transform: translateX(-50%) scale(1);
+        }
+
+        /* 오버레이 화면 (시작, 일시정지, 게임오버) */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 15, 30, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .overlay h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .overlay p {
+            font-size: 16px;
+            color: #ddd;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            max-width: 400px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5253);
+            border: none;
+            color: white;
+            padding: 14px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(238, 82, 83, 0.4);
+            transition: transform 0.1s, box-shadow 0.1s;
+            margin: 8px;
+        }
+        .btn-primary:active {
+            transform: scale(0.95);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 8px;
+            transition: background 0.2s;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 오브젝트 스타일 (풍선, 폭탄) */
+        .game-object {
+            position: absolute;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s;
+            z-index: 50;
+        }
+        .game-object:active {
+            transform: translate(-50%, -50%) scale(0.85);
+        }
+
+        /* 화면 흔들림 효과 */
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-10px, 5px) rotate(-3deg); }
+            40% { transform: translate(10px, -5px) rotate(3deg); }
+            60% { transform: translate(-7px, -3px) rotate(-1deg); }
+            80% { transform: translate(7px, 3px) rotate(1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* 스페셜 풍선 플래시 효과 */
+        #flash-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 150;
+            transition: opacity 0.3s ease-out;
+        }
+
+        /* 모달 (게임 방법) */
+        #rules-modal {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 300;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: #1e272e;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: left;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { margin-top: 0; color: #ff6b6b; }
+        .modal-content ul { padding-left: 20px; font-size: 14px; color: #ccc; line-height: 1.6; }
+
+        /* 등급 스타일 */
+        .rank-badge {
+            font-size: 22px;
+            font-weight: bold;
+            padding: 6px 16px;
+            border-radius: 15px;
+            display: inline-block;
+            margin: 10px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .rank-bronze { background: #cd7f32; color: #fff; }
+        .rank-silver { background: #95a5a6; color: #fff; }
+        .rank-gold { background: #f1c40f; color: #000; }
+        .rank-diamond { background: #00cec9; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- 상단 HUD -->
+        <div id="hud">
+            <div class="hud-top-row">
+                <button class="btn-icon" id="btn-rules">?</button>
+                <button class="btn-icon" id="btn-pause">⏸</button>
+            </div>
+            <div id="timer-bar-container">
+                <span id="timer-icon">⏰</span>
+                <div id="timer-bar"></div>
+            </div>
+        </div>
+
+        <!-- 공지 배너 -->
+        <div id="notice-banner">보너스 타임!</div>
+
+        <!-- 왼쪽 아래 점수 -->
+        <div id="score-display">점수: 0</div>
+
+        <!-- 게임 영역 플레이스홀더 -->
+        <div id="play-area" style="position: absolute; top: 75px; left: 0; width: 100%; bottom: 0; overflow: hidden; pointer-events: none;"></div>
+
+        <!-- 백색 플래시 효과 레이어 -->
+        <div id="flash-overlay"></div>
+
+        <!-- 시작 화면 오버레이 -->
+        <div id="start-screen" class="overlay">
+            <h1>🎈 풍선 터뜨리기 게임</h1>
+            <p>제한 시간(1분 30초) 동안 폭탄을 피해 풍선을 터뜨리고 최고 점수를 달성해보세요!</p>
+            <button class="btn-primary" id="btn-start">게임 시작</button>
+        </div>
+
+        <!-- 일시정지 오버레이 -->
+        <div id="pause-screen" class="overlay" style="display: none;">
+            <h1>일시정지</h1>
+            <p>게임이 일시정지되었습니다.</p>
+            <button class="btn-primary" id="btn-resume">게임 재개</button>
+            <button class="btn-secondary" id="btn-restart-pause">다시 하기</button>
+        </div>
+
+        <!-- 게임 오버 오버레이 -->
+        <div id="gameover-screen" class="overlay" style="display: none;">
+            <h1>게임 종료!</h1>
+            <p style="font-size: 20px; margin-bottom: 5px;">총 점수: <span id="final-score" style="font-weight: bold; color: #feca57;">0</span>점</p>
+            <div id="rank-container"></div>
+            <p id="next-rank-msg" style="font-size: 14px; color: #aaa; margin: 10px 0 20px 0;"></p>
+            <button class="btn-primary" id="btn-restart-game">다시 하기</button>
+        </div>
+
+        <!-- 게임 방법 모달 -->
+        <div id="rules-modal">
+            <div class="modal-content">
+                <h2>📖 게임 방법</h2>
+                <ul>
+                    <li><b>기본 풍선:</b> 클릭 시 +10점 획득 및 풍선 폭발</li>
+                    <li><b>폭탄:</b> 클릭 시 화면 흔들림, -10점 및 제한 시간 10초 감소</li>
+                    <li><b>스페셜 풍선:</b> 제한 시간 동안 총 3~5회 무작위 등장(1초 유지). 터뜨리면 화면이 밝아지며 전체 터짐 +30점 + 추가 시간 5초!</li>
+                    <li><b>보너스 타임:</b> 종료 전 마지막 10초간 폭탄 미등장, 다수의 스페셜 풍선 등장 (스페셜 풍선 당 +50점)</li>
+                    <li><b>등급제:</b> 브론즈(0점), 실버(600점), 골드(1400점), 다이아몬드(1800점)</li>
+                </ul>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn-primary" id="btn-close-rules" style="padding: 10px 25px; font-size: 15px;">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAME_DURATION = 90; // 1분 30초 (초)
+        const RESPAWN_INTERVAL = 3; // 3초마다 리스폰
+
+        let score = 0;
+        let timeLeft = GAME_DURATION;
+        let isPlaying = false;
+        let isPaused = false;
+        let isBonusTime = false;
+        
+        let timerInterval = null;
+        let respawnIntervalTimer = null;
+        let specialBalloonTimer = null;
+        let specialBalloonCount = 0;
+        let maxSpecialBalloons = 0;
+
+        let activeObjects = [];
+
+        const playArea = document.getElementById('play-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerBar = document.getElementById('timer-bar');
+        const noticeBanner = document.getElementById('notice-banner');
+        const flashOverlay = document.getElementById('flash-overlay');
+        const gameContainer = document.getElementById('game-container');
+
+        // 오버레이 엘리먼트
+        const startScreen = document.getElementById('start-screen');
+        const pauseScreen = document.getElementById('pause-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const rulesModal = document.getElementById('rules-modal');
+
+        // 버튼 엘리먼트
+        document.getElementById('btn-start').addEventListener('click', startGame);
+        document.getElementById('btn-pause').addEventListener('click', togglePause);
+        document.getElementById('btn-resume').addEventListener('click', togglePause);
+        document.getElementById('btn-restart-pause').addEventListener('click', restartGame);
+        document.getElementById('btn-restart-game').addEventListener('click', restartGame);
+        document.getElementById('btn-rules').addEventListener('click', () => rulesModal.style.display = 'flex');
+        document.getElementById('btn-close-rules').addEventListener('click', () => rulesModal.style.display = 'none');
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameoverScreen.style.display = 'none';
+            score = 0;
+            timeLeft = GAME_DURATION;
+            isBonusTime = false;
+            specialBalloonCount = 0;
+            maxSpecialBalloons = Math.floor(Math.random() * 3) + 3; // 3 ~ 5회 랜덤 설정
+
+            updateScoreDisplay();
+            updateTimerBar();
+
+            isPlaying = true;
+            isPaused = false;
+
+            playArea.style.pointerEvents = 'auto';
+            spawnObjects();
+
+            // 타이머 시작 (1초 주기)
+            timerInterval = setInterval(() => {
+                if (!isPaused && isPlaying) {
+                    timeLeft--;
+                    updateTimerBar();
+
+                    // 보너스 타임 진입 체크 (10초 전)
+                    if (timeLeft === 10 && !isBonusTime) {
+                        triggerBonusTime();
+                    }
+
+                    if (timeLeft <= 0) {
+                        endGame();
+                    }
+                }
+            }, 1000);
+
+            // 3초 주기 리스폰 타이머
+            respawnIntervalTimer = setInterval(() => {
+                if (!isPaused && isPlaying && !isBonusTime) {
+                    spawnObjects();
+                }
+            }, RESPAWN_INTERVAL * 1000);
+
+            // 스페셜 풍선 랜덤 등장 스케줄러 (제한시간 내 3~5회)
+            scheduleSpecialBalloon();
+        }
+
+        function togglePause() {
+            if (!isPlaying) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseScreen.style.display = 'flex';
+                playArea.style.pointerEvents = 'none';
+            } else {
+                pauseScreen.style.display = 'none';
+                playArea.style.pointerEvents = 'auto';
+            }
+        }
+
+        function restartGame() {
+            pauseScreen.style.display = 'none';
+            gameoverScreen.style.display = 'none';
+            clearAllObjects();
+            clearInterval(timerInterval);
+            clearInterval(respawnIntervalTimer);
+            clearTimeout(specialBalloonTimer);
+            startGame();
+        }
+
+        function triggerBonusTime() {
+            isBonusTime = true;
+            showNotice("보너스 타임! 폭탄 없음 & 스페셜 풍선 대량 출현!");
+            clearAllObjects();
+            spawnBonusObjects();
+        }
+
+        function showNotice(text) {
+            noticeBanner.innerText = text;
+            noticeBanner.classList.add('show');
+            setTimeout(() => {
+                noticeBanner.classList.remove('show');
+            }, 3000);
+        }
+
+        function updateScoreDisplay() {
+            scoreDisplay.innerText = `점수: ${score}`;
+        }
+
+        function updateTimerBar() {
+            let percentage = (timeLeft / GAME_DURATION) * 100;
+            if (percentage < 0) percentage = 0;
+            timerBar.style.width = percentage + '%';
+        }
+
+        function clearAllObjects() {
+            activeObjects.forEach(obj => obj.element.remove());
+            activeObjects = [];
+        }
+
+        // 일반 게임 오브젝트 생성 (풍선 30개, 폭탄 30개)
+        function spawnObjects() {
+            clearAllObjects();
+
+            const rect = playArea.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            // 풍선 30개
+            for (let i = 0; i < 30; i++) {
+                createObject('balloon', width, height);
+            }
+            // 폭탄 30개
+            for (let i = 0; i < 30; i++) {
+                createObject('bomb', width, height);
+            }
+        }
+
+        // 보너스 타임 오브젝트 생성 (폭탄 없음, 풍선 다수 + 스페셜 풍선들)
+        function spawnBonusObjects() {
+            clearAllObjects();
+            const rect = playArea.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            // 풍선 40개
+            for (let i = 0; i < 40; i++) {
+                createObject('balloon', width, height);
+            }
+            // 스페셜 풍선 여러 개 동시 배치
+            for (let i = 0; i < 4; i++) {
+                createObject('special', width, height);
+            }
+        }
+
+        function createObject(type, maxWidth, maxHeight) {
+            const el = document.createElement('div');
+            el.className = 'game-object';
+
+            let x = Math.random() * (maxWidth - 50) + 25;
+            let y = Math.random() * (maxHeight - 50) + 25;
+
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+
+            if (type === 'balloon') {
+                const colors = ['🎈', '🔴', '🔵', '🟢', '🟣', '🟠'];
+                el.innerHTML = colors[Math.floor(Math.random() * colors.length)];
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    popBalloon(el);
+                };
+            } else if (type === 'bomb') {
+                el.innerHTML = '💣';
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    hitBomb(el);
+                };
+            } else if (type === 'special') {
+                el.innerHTML = '⭐';
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    popSpecialBalloon(el);
+                };
+            }
+
+            playArea.appendChild(el);
+            activeObjects.push({ element: el, type: type });
+        }
+
+        function popBalloon(element) {
+            score += 10;
+            updateScoreDisplay();
+            createPopEffect(element);
+            element.remove();
+            activeObjects = activeObjects.filter(obj => obj.element !== element);
+        }
+
+        function hitBomb(element) {
+            score = Math.max(0, score - 10);
+            timeLeft = Math.max(0, timeLeft - 10);
+            updateScoreDisplay();
+            updateTimerBar();
+
+            // 화면 흔들림 효과
+            gameContainer.classList.add('shake');
+            setTimeout(() => gameContainer.classList.remove('shake'), 400);
+
+            element.remove();
+            activeObjects = activeObjects.filter(obj => obj.element !== element);
+
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function popSpecialBalloon(element) {
+            if (isBonusTime) {
+                score += 50;
+            } else {
+                score += 30;
+                timeLeft += 5;
+                if (timeLeft > GAME_DURATION) timeLeft = GAME_DURATION;
+            }
+            updateScoreDisplay();
+            updateTimerBar();
+
+            // 화면 밝아지는 이펙트 및 전체 터짐 효과
+            triggerFlashEffect();
+
+            // 화면 내 다른 모든 오브젝트 제거 (점수 획득 없이 터짐 처리)
+            activeObjects.forEach(obj => {
+                if (obj.element !== element) {
+                    obj.element.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                    obj.element.style.opacity = '0';
+                    setTimeout(() => obj.element.remove(), 200);
+                }
+            });
+            element.remove();
+            activeObjects = [];
+
+            // 자연스럽게 잠시 후 새로운 풍선과 폭탄들 나타나기
+            setTimeout(() => {
+                if (isPlaying && !isPaused) {
+                    if (isBonusTime) {
+                        spawnBonusObjects();
+                    } else {
+                        spawnObjects();
+                    }
+                }
+            }, 300);
+        }
+
+        function triggerFlashEffect() {
+            flashOverlay.style.opacity = '0.8';
+            setTimeout(() => {
+                flashOverlay.style.opacity = '0';
+            }, 300);
+        }
+
+        function scheduleSpecialBalloon() {
+            if (specialBalloonCount >= maxSpecialBalloons || isBonusTime) return;
+
+            // 랜덤 시간 간격으로 스페셜 풍선 1초간 등장 (예: 10~20초 사이)
+            let randomDelay = (Math.random() * 10 + 10) * 1000;
+            specialBalloonTimer = setTimeout(() => {
+                if (!isPlaying || isPaused || isBonusTime) return;
+
+                specialBalloonCount++;
+                const rect = playArea.getBoundingClientRect();
+                const el = document.createElement('div');
+                el.className = 'game-object';
+                el.innerHTML = '🌟';
+                el.style.left = (Math.random() * (rect.width - 60) + 30) + 'px';
+                el.style.top = (Math.random() * (rect.height - 60) + 30) + 'px';
+                el.style.zIndex = '100';
+                el.style.transform = 'translate(-50%, -50%) scale(1.3)';
+
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    popSpecialBalloon(el);
+                };
+
+                playArea.appendChild(el);
+                activeObjects.push({ element: el, type: 'special' });
+
+                // 1초 후 자동 소멸
+                setTimeout(() => {
+                    if (el.parentNode) {
+                        el.remove();
+                        activeObjects = activeObjects.filter(obj => obj.element !== el);
+                    }
+                }, 1000);
+
+                // 다음 스페셜 풍선 예약
+                scheduleSpecialBalloon();
+            }, randomDelay);
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            clearInterval(respawnIntervalTimer);
+            clearTimeout(specialBalloonTimer);
+            clearAllObjects();
+
+            playArea.style.pointerEvents = 'none';
+            document.getElementById('final-score').innerText = score;
+
+            // 등급 판정 (브론즈: 0~599, 실버: 600~1399, 골드: 1400~1799, 다이아몬드: 1800~)
+            let rankHtml = '';
+            let nextRankMsg = '';
+
+            if (score >= 1800) {
+                rankHtml = '<div class="rank-badge rank-diamond">💎 다이아몬드 등급</div>';
+                nextRankMsg = '최고 등급을 달성하셨습니다!';
+            } else if (score >= 1400) {
+                rankHtml = '<div class="rank-badge rank-gold">🥇 금메달 등급</div>';
+                let diff = 1800 - score;
+                nextRankMsg = `다음 다이아몬드 등급까지 ${diff}점 남았습니다!`;
+            } else if (score >= 600) {
+                rankHtml = '<div class="rank-badge rank-silver">🥈 은메달 등급</div>';
+                let diff = 1400 - score;
+                nextRankMsg = `다음 금메달 등급까지 ${diff}점 남았습니다!`;
+            } else {
+                rankHtml = '<div class="rank-badge rank-bronze">🥉 동메달 등급</div>';
+                let diff = 600 - score;
+                nextRankMsg = `다음 은메달 등급까지 ${diff}점 남았습니다!`;
+            }
+
+            document.getElementById('rank-container').innerHTML = rankHtml;
+            document.getElementById('next-rank-msg').innerText = nextRankMsg;
+
+            gameoverScreen.style.display = 'flex';
+        }
+
+        function createPopEffect(element) {
+            const rect = element.getBoundingClientRect();
+            const particleContainer = document.createElement('div');
+            particleContainer.style.position = 'absolute';
+            particleContainer.style.left = (rect.left + rect.width / 2) + 'px';
+            particleContainer.style.top = (rect.top + rect.height / 2) + 'px';
+            particleContainer.style.zIndex = '120';
+            particleContainer.style.pointerEvents = 'none';
+
+            for (let i = 0; i < 6; i++) {
+                const p = document.createElement('div');
+                p.style.position = 'absolute';
+                p.style.width = '6px';
+                p.style.height = '6px';
+                p.style.background = '#feca57';
+                p.style.borderRadius = '50%';
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 40 + 10;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                p.style.transition = 'all 0.3s ease-out';
+                particleContainer.appendChild(p);
+
+                setTimeout(() => {
+                    p.style.transform = `translate(${tx}px, ${ty}px) scale(0)`;
+                    p.style.opacity = '0';
+                }, 10);
+            }
+
+            gameContainer.appendChild(particleContainer);
+            setTimeout(() => particleContainer.remove(), 300);
+        }
+    </script>
+</body>
+</html>
