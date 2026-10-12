@@ -318,7 +318,7 @@
         <div id="flash-overlay"></div>
 
         <!-- 시작 화면 오버레이 -->
-        <div id="start-screen" class="overlay">
+        <div id="start-screen" class="overlay" style="z-index: 250;">
             <h1>🎈 풍선 터뜨리기 게임</h1>
             <p>제한 시간(1분 30초) 동안 폭탄을 피해 풍선을 터뜨리고 최고 점수를 달성해보세요!</p>
             <button class="btn-primary" id="btn-start">게임 시작</button>
@@ -396,7 +396,15 @@
         document.getElementById('btn-resume').addEventListener('click', togglePause);
         document.getElementById('btn-restart-pause').addEventListener('click', restartGame);
         document.getElementById('btn-restart-game').addEventListener('click', restartGame);
-        document.getElementById('btn-rules').addEventListener('click', () => rulesModal.style.display = 'flex');
+        
+        // 물음표 버튼 이벤트 수정: 게임 중에는 일시정지, 시작 화면 등에서는 기존처럼 규칙 모달 오픈
+        document.getElementById('btn-rules').addEventListener('click', () => {
+            if (isPlaying) {
+                togglePause();
+            } else {
+                rulesModal.style.display = 'flex';
+            }
+        });
         document.getElementById('btn-close-rules').addEventListener('click', () => rulesModal.style.display = 'none');
 
         function startGame() {
