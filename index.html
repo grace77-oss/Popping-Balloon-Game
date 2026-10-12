@@ -368,7 +368,7 @@
         let isPlaying = false;
         let isPaused = false;
         let isBonusTime = false;
-        let wasPausedByRules = false; // 게임 설명 창으로 인해 일시정지 되었는지 여부
+        let wasPausedByRules = false;
         
         let timerInterval = null;
         let respawnIntervalTimer = null;
@@ -398,7 +398,7 @@
         document.getElementById('btn-restart-pause').addEventListener('click', restartGame);
         document.getElementById('btn-restart-game').addEventListener('click', restartGame);
         
-        // 물음표(?) 버튼: 게임 중이면 게임을 일시정지하고 게임 설명 모달 표시
+        // 물음표(?) 버튼: 게임 중이면 일시정지시키고 게임 설명창 열기
         document.getElementById('btn-rules').addEventListener('click', () => {
             if (isPlaying && !isPaused) {
                 isPaused = true;
@@ -408,7 +408,7 @@
             rulesModal.style.display = 'flex';
         });
 
-        // 게임 설명 닫기 버튼: 물음표로 일시정지되었던 상태면 게임 재개
+        // 게임 설명 확인 버튼: 물음표로 일시정지된 상태였다면 게임 재개
         document.getElementById('btn-close-rules').addEventListener('click', () => {
             rulesModal.style.display = 'none';
             if (isPlaying && wasPausedByRules) {
