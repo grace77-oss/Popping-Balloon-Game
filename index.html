@@ -254,7 +254,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
             z-index: 300;
             justify-content: center;
             align-items: center;
@@ -398,8 +399,11 @@
         document.getElementById('btn-restart-pause').addEventListener('click', restartGame);
         document.getElementById('btn-restart-game').addEventListener('click', restartGame);
         
-        // 물음표(?) 버튼: 게임 중이면 일시정지시키고 게임 설명창 열기
+        // 물음표(?) 버튼 클릭 이벤트
         document.getElementById('btn-rules').addEventListener('click', () => {
+            // 일시정지 화면이 열려있지 않도록 명확하게 처리
+            pauseScreen.style.display = 'none';
+
             if (isPlaying && !isPaused) {
                 isPaused = true;
                 wasPausedByRules = true;
@@ -408,7 +412,7 @@
             rulesModal.style.display = 'flex';
         });
 
-        // 게임 설명 확인 버튼: 물음표로 일시정지된 상태였다면 게임 재개
+        // 게임 설명 [확인] 버튼 클릭 이벤트
         document.getElementById('btn-close-rules').addEventListener('click', () => {
             rulesModal.style.display = 'none';
             if (isPlaying && wasPausedByRules) {
@@ -420,7 +424,10 @@
 
         function startGame() {
             startScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
             gameoverScreen.style.display = 'none';
+            rulesModal.style.display = 'none';
+            
             score = 0;
             timeLeft = GAME_DURATION;
             isBonusTime = false;
@@ -467,8 +474,13 @@
 
         function togglePause() {
             if (!isPlaying) return;
+
+            // 게임 설명창이 열려있다면 먼저 닫기
+            rulesModal.style.display = 'none';
+
             isPaused = !isPaused;
             wasPausedByRules = false;
+
             if (isPaused) {
                 pauseScreen.style.display = 'flex';
                 playArea.style.pointerEvents = 'none';
@@ -481,6 +493,7 @@
         function restartGame() {
             pauseScreen.style.display = 'none';
             gameoverScreen.style.display = 'none';
+            rulesModal.style.display = 'none';
             clearAllObjects();
             clearInterval(timerInterval);
             clearInterval(respawnIntervalTimer);
@@ -564,7 +577,7 @@
             el.style.top = y + 'px';
 
             if (type === 'balloon') {
-                const colors = ['🎈', '🔴', '🔵', '🟢', '🟣', '🟠'];
+                const colors = [ '🔴', '🔵', '🟢', '🟣', '🟠'];
                 el.innerHTML = colors[Math.floor(Math.random() * colors.length)];
                 el.onclick = (e) => {
                     e.stopPropagation();
