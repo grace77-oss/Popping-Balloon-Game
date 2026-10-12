@@ -368,6 +368,7 @@
         let isPlaying = false;
         let isPaused = false;
         let isBonusTime = false;
+        let wasPausedByRules = false; // 게임 설명 창으로 인해 일시정지 되었는지 여부
         
         let timerInterval = null;
         let respawnIntervalTimer = null;
@@ -397,15 +398,25 @@
         document.getElementById('btn-restart-pause').addEventListener('click', restartGame);
         document.getElementById('btn-restart-game').addEventListener('click', restartGame);
         
-        // 물음표 버튼 이벤트 수정: 게임 중에는 일시정지, 시작 화면 등에서는 기존처럼 규칙 모달 오픈
+        // 물음표(?) 버튼: 게임 중이면 게임을 일시정지하고 게임 설명 모달 표시
         document.getElementById('btn-rules').addEventListener('click', () => {
-            if (isPlaying) {
-                togglePause();
-            } else {
-                rulesModal.style.display = 'flex';
+            if (isPlaying && !isPaused) {
+                isPaused = true;
+                wasPausedByRules = true;
+                playArea.style.pointerEvents = 'none';
+            }
+            rulesModal.style.display = 'flex';
+        });
+
+        // 게임 설명 닫기 버튼: 물음표로 일시정지되었던 상태면 게임 재개
+        document.getElementById('btn-close-rules').addEventListener('click', () => {
+            rulesModal.style.display = 'none';
+            if (isPlaying && wasPausedByRules) {
+                isPaused = false;
+                wasPausedByRules = false;
+                playArea.style.pointerEvents = 'auto';
             }
         });
-        document.getElementById('btn-close-rules').addEventListener('click', () => rulesModal.style.display = 'none');
 
         function startGame() {
             startScreen.style.display = 'none';
@@ -413,6 +424,7 @@
             score = 0;
             timeLeft = GAME_DURATION;
             isBonusTime = false;
+            wasPausedByRules = false;
             specialBalloonCount = 0;
             maxSpecialBalloons = Math.floor(Math.random() * 3) + 3; // 3 ~ 5회 랜덤 설정
 
@@ -456,6 +468,7 @@
         function togglePause() {
             if (!isPlaying) return;
             isPaused = !isPaused;
+            wasPausedByRules = false;
             if (isPaused) {
                 pauseScreen.style.display = 'flex';
                 playArea.style.pointerEvents = 'none';
