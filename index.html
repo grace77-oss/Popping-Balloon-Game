@@ -356,7 +356,7 @@
                     <li><b>폭탄:</b> 클릭 시 화면 흔들림, -10점 및 제한 시간 10초 감소</li>
                     <li><b>스페셜 풍선:</b> 제한 시간 동안 총 3~5회 무작위 등장(1초 유지). 터뜨리면 화면이 밝아지며 전체 터짐 +30점 + 추가 시간 5초!</li>
                     <li><b>보너스 타임:</b> 종료 전 마지막 10초간 폭탄 미등장, 다수의 스페셜 풍선 등장 (스페셜 풍선 당 +50점)</li>
-                    <li><b>등급제:</b> 브론즈(0점), 실버(600점), 골드(1400점), 다이아몬드(1800점)</li>
+                    <li><b>등급제:</b> 동메달(0~299점), 은메달(300~799점), 금메달(800~1099점), 다이아몬드(1100점 이상)</li>
                 </ul>
                 <div style="text-align: center; margin-top: 20px;">
                     <button class="btn-primary" id="btn-close-rules" style="padding: 10px 25px; font-size: 15px;">확인</button>
@@ -429,10 +429,11 @@
             }
         });
 
+        // 수정된 등급 기준 반영
         function getRankInfo(s) {
-            if (s >= 1800) return { name: '다이아몬드', className: 'rank-diamond', badge: '💎 다이아몬드 등급' };
-            if (s >= 1400) return { name: '금메달', className: 'rank-gold', badge: '🥇 금메달 등급' };
-            if (s >= 600) return { name: '은메달', className: 'rank-silver', badge: '🥈 은메달 등급' };
+            if (s >= 1100) return { name: '다이아몬드', className: 'rank-diamond', badge: '💎 다이아몬드 등급' };
+            if (s >= 800) return { name: '금메달', className: 'rank-gold', badge: '🥇 금메달 등급' };
+            if (s >= 300) return { name: '은메달', className: 'rank-silver', badge: '🥈 은메달 등급' };
             return { name: '동메달', className: 'rank-bronze', badge: '🥉 동메달 등급' };
         }
 
@@ -469,7 +470,6 @@
                     timeLeft--;
                     updateTimerBar();
 
-                    // 보너스 타임 진입 체크 (10초 이하 진입 시)
                     if (timeLeft <= 10 && !isBonusTime) {
                         triggerBonusTime();
                     }
@@ -638,7 +638,6 @@
             element.remove();
             activeObjects = activeObjects.filter(obj => obj.element !== element);
 
-            // 폭탄 효과 후 남은 시간이 10초 이하로 떨어졌다면 즉시 보너스 타임 발동 체크
             if (timeLeft <= 10 && !isBonusTime) {
                 triggerBonusTime();
             }
@@ -740,16 +739,17 @@
             let rankHtml = `<div class="rank-badge ${rankInfo.className}">${rankInfo.badge}</div>`;
             let nextRankMsg = '';
 
-            if (score >= 1800) {
+            // 수정된 등급 기준에 따른 다음 등급 안내 메시지
+            if (score >= 1100) {
                 nextRankMsg = '최고 등급을 달성하셨습니다!';
-            } else if (score >= 1400) {
-                let diff = 1800 - score;
+            } else if (score >= 800) {
+                let diff = 1100 - score;
                 nextRankMsg = `다음 다이아몬드 등급까지 ${diff}점 남았습니다!`;
-            } else if (score >= 600) {
-                let diff = 1400 - score;
+            } else if (score >= 300) {
+                let diff = 800 - score;
                 nextRankMsg = `다음 금메달 등급까지 ${diff}점 남았습니다!`;
             } else {
-                let diff = 600 - score;
+                let diff = 300 - score;
                 nextRankMsg = `다음 은메달 등급까지 ${diff}점 남았습니다!`;
             }
 
