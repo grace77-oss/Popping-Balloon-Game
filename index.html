@@ -370,7 +370,7 @@
         const RESPAWN_INTERVAL = 3; // 3초마다 리스폰
 
         let score = 0;
-        let highScore = 0; // 최고 점수 저장 변수
+        let highScore = 0;
         let timeLeft = GAME_DURATION;
         let isPlaying = false;
         let isPaused = false;
@@ -405,7 +405,6 @@
         document.getElementById('btn-restart-pause').addEventListener('click', restartGame);
         document.getElementById('btn-restart-game').addEventListener('click', restartGame);
         
-        // 새로 추가된 홈 화면 가기 버튼 이벤트
         document.getElementById('btn-home-pause').addEventListener('click', goToHome);
         document.getElementById('btn-home-gameover').addEventListener('click', goToHome);
 
@@ -421,7 +420,6 @@
             rulesModal.style.display = 'flex';
         });
 
-        // 게임 설명 확인 버튼 클릭 이벤트
         document.getElementById('btn-close-rules').addEventListener('click', () => {
             rulesModal.style.display = 'none';
             if (isPlaying && wasPausedByRules) {
@@ -431,7 +429,6 @@
             }
         });
 
-        // 등급 정보 가져오기 헬퍼 함수
         function getRankInfo(s) {
             if (s >= 1800) return { name: '다이아몬드', className: 'rank-diamond', badge: '💎 다이아몬드 등급' };
             if (s >= 1400) return { name: '금메달', className: 'rank-gold', badge: '🥇 금메달 등급' };
@@ -439,7 +436,6 @@
             return { name: '동메달', className: 'rank-bronze', badge: '🥉 동메달 등급' };
         }
 
-        // 시작 화면 및 일시정지 창의 최고 점수 텍스트 업데이트
         function updateHighScoreDisplay() {
             let rank = getRankInfo(highScore);
             document.getElementById('start-highscore-container').innerHTML = `최고 점수: ${highScore}점 (${rank.name})`;
@@ -468,13 +464,13 @@
             playArea.style.pointerEvents = 'auto';
             spawnObjects();
 
-            // 타이머 시작 (1초 주기)
             timerInterval = setInterval(() => {
                 if (!isPaused && isPlaying) {
                     timeLeft--;
                     updateTimerBar();
 
-                    if (timeLeft === 10 && !isBonusTime) {
+                    // 보너스 타임 진입 체크 (10초 이하 진입 시)
+                    if (timeLeft <= 10 && !isBonusTime) {
                         triggerBonusTime();
                     }
 
@@ -502,7 +498,7 @@
             wasPausedByRules = false;
 
             if (isPaused) {
-                updateHighScoreDisplay(); // 일시정지 창 열릴 때 최신 최고 점수 반영
+                updateHighScoreDisplay();
                 pauseScreen.style.display = 'flex';
                 playArea.style.pointerEvents = 'none';
             } else {
@@ -522,7 +518,6 @@
             startGame();
         }
 
-        // 홈 화면으로 돌아가기 함수
         function goToHome() {
             isPlaying = false;
             isPaused = false;
@@ -643,6 +638,11 @@
             element.remove();
             activeObjects = activeObjects.filter(obj => obj.element !== element);
 
+            // 폭탄 효과 후 남은 시간이 10초 이하로 떨어졌다면 즉시 보너스 타임 발동 체크
+            if (timeLeft <= 10 && !isBonusTime) {
+                triggerBonusTime();
+            }
+
             if (timeLeft <= 0) {
                 endGame();
             }
@@ -732,7 +732,6 @@
             playArea.style.pointerEvents = 'none';
             document.getElementById('final-score').innerText = score;
 
-            // 최고 점수 갱신 체크
             if (score > highScore) {
                 highScore = score;
             }
@@ -796,7 +795,6 @@
             setTimeout(() => particleContainer.remove(), 300);
         }
 
-        // 최초 로딩 시 초기 최고 점수 표시 세팅
         updateHighScoreDisplay();
     </script>
 </body>
